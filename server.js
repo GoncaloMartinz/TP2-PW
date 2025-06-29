@@ -9,18 +9,16 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Define o origin do CORS via env var, ou aceita tudo para dev
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || '*';
-
+// Middleware CORS
 app.use(cors({
-  origin: CLIENT_ORIGIN,
+  origin: 'https://tp2-pw-2.onrender.com',
   credentials: true
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configuração de Sessão com MongoDB
+// Sessões
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -30,14 +28,13 @@ app.use(session({
     ttl: 24 * 60 * 60 // 1 dia
   }),
   cookie: {
-    // Em produção, geralmente queres secure: true, se usares HTTPS
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production', // True se em produção (https)
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
-// Conexão MongoDB
+// MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
@@ -47,7 +44,7 @@ app.use('/api/auth', require('./backend/routes/auth'));
 app.use('/api/weather', require('./backend/routes/weather'));
 app.use('/api/history', require('./backend/routes/history'));
 
-// Servir frontend estático
+// Frontend static
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Rota fallback para SPA
@@ -61,6 +58,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
+// Start
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on ${process.env.NODE_ENV === 'production' ? 'Render' : 'http://localhost:' + PORT}`);
 });
+
