@@ -9,11 +9,14 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Define o origin do CORS via env var, ou aceita tudo para dev
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || '*';
+
 app.use(cors({
-  origin: 'http://localhost:' + PORT,
+  origin: CLIENT_ORIGIN,
   credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -27,7 +30,8 @@ app.use(session({
     ttl: 24 * 60 * 60 // 1 dia
   }),
   cookie: {
-    secure: false,
+    // Em produção, geralmente queres secure: true, se usares HTTPS
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000
   }
@@ -43,10 +47,10 @@ app.use('/api/auth', require('./backend/routes/auth'));
 app.use('/api/weather', require('./backend/routes/weather'));
 app.use('/api/history', require('./backend/routes/history'));
 
-// Frontend
+// Servir frontend estático
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Rota fallback
+// Rota fallback para SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
@@ -58,5 +62,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
