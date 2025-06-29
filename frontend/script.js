@@ -15,7 +15,8 @@ async function buscarClima() {
       </div>
     `;
 
-    const resposta = await fetch(`/api/weather/city/${encodeURIComponent(cidade)}`, {
+    // ✅ Alterado: URL completa do backend na Render
+    const resposta = await fetch(`https://tp2-pw-2.onrender.com/api/weather/city/${encodeURIComponent(cidade)}`, {
       credentials: 'include'
     });
 
@@ -63,7 +64,7 @@ async function buscarClima() {
 
   } catch (erro) {
     console.error('Erro detalhado:', erro);
-    
+
     let mensagem = erro.message;
     if (erro.message.includes('404')) mensagem = 'Cidade não encontrada';
     if (erro.message.includes('401')) {
