@@ -7,18 +7,30 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware CORS
+// Configuração de CORS
+const allowedOrigins = [
+  'http://localhost:3000',                      // Frontend local
+  'https://teu-frontend-na-vercel.vercel.app',  // Caso você suba na Vercel no futuro (pode remover se não quiser)
+];
+
 app.use(cors({
-  origin: 'https://tp2-pw-2.onrender.com',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
+// Middleware para receber JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Sessões
+// Configuração de Sessão com MongoDB
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -28,38 +40,38 @@ app.use(session({
     ttl: 24 * 60 * 60 // 1 dia
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // True se em produção (https)
+    secure: false, // Para produção com HTTPS, você pode depois mudar pra true
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
-// MongoDB
+// Conexão com o MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
 
-// Rotas
+// Rotas da API
 app.use('/api/auth', require('./backend/routes/auth'));
 app.use('/api/weather', require('./backend/routes/weather'));
 app.use('/api/history', require('./backend/routes/history'));
 
-// Frontend static
+// Servir arquivos estáticos do frontend (se quiser fazer build futuramente)
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Rota fallback para SPA
+// Rota fallback (Single Page Applications como React Router)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// Error handler
+// Tratamento de erros
 app.use((err, req, res, next) => {
   console.error('🔥 Error:', err);
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-// Start
+// Inicializar o servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on ${process.env.NODE_ENV === 'production' ? 'Render' : 'http://localhost:' + PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
